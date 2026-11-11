@@ -1,0 +1,6 @@
+{
+  "name": "마음 서가 챗봇",
+  "description": "감정과 일상을 들려주면 마음에 와닿는 책을 골라주는 AI 감성 서가",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
