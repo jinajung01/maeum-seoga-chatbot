@@ -41,4 +41,17 @@ export interface ApiRecommendResponse {
   data?: RecommendationResult;
   error?: string;
   isFallback?: boolean;
+  latencyMs?: number;
+}
+
+export type PersonaPresetId = 'warm' | 'literary' | 'concise' | 'philosophical' | 'custom';
+
+export interface AdminAiConfig {
+  personaPreset: PersonaPresetId;
+  systemInstruction: string;
+  maxPicks: number; // 1 ~ 5
+  thinkingLevel: 'LOW' | 'MEDIUM';
+  reasonStyle: 'brief' | 'balanced' | 'deep';
+  timeoutMs: number; // 3000 ~ 10000
+  allowCrossEmotion: boolean;
 }

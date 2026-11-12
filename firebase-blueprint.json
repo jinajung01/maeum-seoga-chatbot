@@ -1,0 +1,44 @@
+{
+  "entities": {
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Information about authenticated administrators",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "description": "Google email address of admin" },
+        "displayName": { "type": "string", "description": "Google profile name" },
+        "photoURL": { "type": "string", "description": "Google avatar URL" },
+        "lastLoginAt": { "type": "string", "description": "ISO timestamp of last login" }
+      },
+      "required": ["uid", "email"]
+    },
+    "AiConfig": {
+      "title": "AiConfig",
+      "description": "Persisted AI fine-tuning configuration",
+      "type": "object",
+      "properties": {
+        "personaPreset": { "type": "string", "description": "Persona preset ID" },
+        "systemInstruction": { "type": "string", "description": "System prompt" },
+        "maxPicks": { "type": "number", "description": "Max recommendations count" },
+        "thinkingLevel": { "type": "string", "description": "Thinking level LOW or MEDIUM" },
+        "reasonStyle": { "type": "string", "description": "Reason style" },
+        "timeoutMs": { "type": "number", "description": "Timeout in milliseconds" },
+        "allowCrossEmotion": { "type": "boolean", "description": "Cross emotion toggle" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" },
+        "updatedBy": { "type": "string", "description": "Admin email who updated" }
+      },
+      "required": ["systemInstruction", "maxPicks"]
+    }
+  },
+  "firestore": {
+    "/admins/{adminUid}": {
+      "schema": "AdminUser",
+      "description": "Stores admin user profile and login history"
+    },
+    "/ai_configs/{configId}": {
+      "schema": "AiConfig",
+      "description": "Stores customized AI fine-tuning configurations"
+    }
+  }
+}
