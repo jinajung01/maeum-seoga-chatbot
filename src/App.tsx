@@ -35,6 +35,10 @@ import {
   GenreType,
 } from './data/books';
 import { ChatMessage, RecommendationResult } from './types';
+import { ruleBasedRecommend } from './lib/ruleBasedRecommend';
+
+// 서버 없이 배포한 경우(GitHub Pages) true: AI 대신 화면 안에서 규칙 기반으로 추천하고, 관리자 콘솔은 숨긴다
+const STATIC_MODE = import.meta.env.VITE_STATIC_MODE === 'true';
 
 const PERIODS = [
   { id: 'dawn', label: '새벽', icon: Moon, desc: '차분한 새벽 공기' },
@@ -171,23 +175,37 @@ export default function App() {
         }
       }
 
-      const controller = new AbortController();
-      const fetchTimer = setTimeout(() => controller.abort(), 9000);
+      let json: { success: boolean; data?: RecommendationResult };
 
-      const res = await fetch('/api/recommend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          message: userText,
-          history: historyPayload.slice(-4),
-          shownIds: shownBookIds,
-          lastUserText,
-        }),
-      });
+      if (STATIC_MODE) {
+        // 서버가 없으므로 화면 안에서 바로 추천
+        const local = ruleBasedRecommend(userText, shownBookIds);
+        json = {
+          success: true,
+          data: {
+            ...local,
+            picks: local.picks.map((p) => ({ ...p, book: BOOKS_CATALOG.find((c) => c.id === p.id) })),
+          },
+        };
+      } else {
+        const controller = new AbortController();
+        const fetchTimer = setTimeout(() => controller.abort(), 9000);
 
-      clearTimeout(fetchTimer);
-      const json = await res.json();
+        const res = await fetch('/api/recommend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            message: userText,
+            history: historyPayload.slice(-4),
+            shownIds: shownBookIds,
+            lastUserText,
+          }),
+        });
+
+        clearTimeout(fetchTimer);
+        json = await res.json();
+      }
 
       if (json.success && json.data) {
         const result: RecommendationResult = json.data;
@@ -346,15 +364,17 @@ export default function App() {
               <Library className="w-4 h-4 text-[var(--muted)]" />
             </button>
 
-            {/* Admin fine-tuning modal */}
-            <button
-              type="button"
-              onClick={() => setIsAdminOpen(true)}
-              className="p-1.5 rounded-full bg-[var(--chip)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors cursor-pointer"
-              title="서가 AI 기능 세밀 조정 (관리자 콘솔)"
-            >
-              <Sliders className="w-4 h-4 text-[var(--muted)]" />
-            </button>
+            {/* Admin fine-tuning modal (서버가 없는 정적 배포에서는 숨김) */}
+            {!STATIC_MODE && (
+              <button
+                type="button"
+                onClick={() => setIsAdminOpen(true)}
+                className="p-1.5 rounded-full bg-[var(--chip)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+                title="서가 AI 기능 세밀 조정 (관리자 콘솔)"
+              >
+                <Sliders className="w-4 h-4 text-[var(--muted)]" />
+              </button>
+            )}
 
             {/* Reset conversation */}
             <button
