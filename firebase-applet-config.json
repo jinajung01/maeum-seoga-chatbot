@@ -1,12 +1,9 @@
 {
-  "projectId": "gen-lang-client-0442647897",
-  "appId": "1:671224416058:web:49ac09e79ac7ee02f43203",
-  "apiKey": "AIzaSyAwzZPB9ErS98mz7HLUCgB-5GxKlKrosoo",
-  "authDomain": "gen-lang-client-0442647897.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-7be7beb8-6d1e-4a68-9e93-67c1574b6ea4",
-  "storageBucket": "gen-lang-client-0442647897.firebasestorage.app",
-  "messagingSenderId": "671224416058",
-  "measurementId": "",
-  "oAuthClientId": "671224416058-62ogqbsi6qp76ncg9sts9kd5gfti1qk3.apps.googleusercontent.com",
-  "recaptchaSiteKey": ""
+  "projectId": "maeum-seoga-399e2",
+  "appId": "1:450206074441:web:d03da7f33a65dc1d8c2198",
+  "apiKey": "AIzaSyCF89pUz4xrX269hUrkXjrY3aiF_QZvPF8",
+  "authDomain": "maeum-seoga-399e2.firebaseapp.com",
+  "storageBucket": "maeum-seoga-399e2.firebasestorage.app",
+  "messagingSenderId": "450206074441",
+  "measurementId": "G-09405WRM7B"
 }

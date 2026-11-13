@@ -8,9 +8,9 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-export const db = firebaseConfig.firestoreDatabaseId
-  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
-  : getFirestore(app);
+// 이름 있는 DB를 쓸 때만 설정 파일에 firestoreDatabaseId를 넣는다. 없으면 기본 DB "(default)" 사용
+const databaseId = (firebaseConfig as { firestoreDatabaseId?: string }).firestoreDatabaseId;
+export const db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
 
 // Validate Firestore connection on boot
 async function validateConnection() {
