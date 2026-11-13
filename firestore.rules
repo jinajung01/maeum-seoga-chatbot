@@ -6,6 +6,14 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid != null;
     }
 
+    // 관리자 여부: Firebase 콘솔에서 admin_allowlist 컬렉션에
+    // "문서 ID = 관리자 Google 이메일"인 문서를 만들어 등록한다 (이메일은 저장소에 두지 않음)
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/admin_allowlist/$(request.auth.token.email));
+    }
+
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
@@ -23,10 +31,15 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // AI configurations
+    // 관리자 목록: 콘솔에서만 관리 (사이트에서는 읽기·쓰기 불가)
+    match /admin_allowlist/{email} {
+      allow read, write: if false;
+    }
+
+    // AI configurations: 누구나 읽기(추천 권수 반영), 저장은 등록된 관리자만
     match /ai_configs/{configId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if isAdmin();
     }
   }
 }
