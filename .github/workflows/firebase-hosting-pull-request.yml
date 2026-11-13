@@ -1,0 +1,39 @@
+# PR을 올리면 Firebase Hosting 미리보기 주소(7일 유지)를 만들어 PR에 댓글로 남긴다.
+# (firebase init hosting:github 가 만드는 구성과 같음)
+# 다른 사람이 포크한 저장소의 PR에서는 비밀 키 보호를 위해 실행하지 않는다.
+name: Deploy to Firebase Hosting on PR
+
+on: pull_request
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  build_and_preview:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 빌드 (정적 모드)
+        env:
+          VITE_STATIC_MODE: 'true'
+        run: npm ci && npm run build
+
+      - name: 기존 페이지 함께 넣기
+        run: |
+          cp "마음서가-챗봇.html" dist/
+          cp hello.html dist/
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MAEUM_SEOGA_399E2 }}
+          projectId: maeum-seoga-399e2

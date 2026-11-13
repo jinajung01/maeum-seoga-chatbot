@@ -1,0 +1,44 @@
+# main 브랜치에 push(병합)하면 Firebase Hosting(maeum-seoga-399e2) 실제 사이트에 배포한다.
+# (firebase init hosting:github 가 만드는 구성과 같음)
+# 서버가 없으므로 정적 모드로 빌드: 키워드 기반 추천 + 관리자 설정은 Firestore에 저장
+# 필요한 GitHub Secret: FIREBASE_SERVICE_ACCOUNT_MAEUM_SEOGA_399E2
+name: Deploy to Firebase Hosting on merge
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firebase-hosting-live
+  cancel-in-progress: true
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 빌드 (정적 모드)
+        env:
+          VITE_STATIC_MODE: 'true'
+        run: npm ci && npm run build
+
+      - name: 기존 페이지 함께 넣기
+        run: |
+          cp "마음서가-챗봇.html" dist/
+          cp hello.html dist/
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MAEUM_SEOGA_399E2 }}
+          channelId: live
+          projectId: maeum-seoga-399e2
