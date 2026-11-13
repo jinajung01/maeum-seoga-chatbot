@@ -128,7 +128,9 @@ export default function App() {
       {
         id: 'welcome',
         sender: 'bot',
-        text: `안녕하세요! **마음 서가**에 오신 것을 환영합니다.\n\n구글 **Gemini 3.8 Flash** AI가 문장의 숨은 뜻과 일상 맥락을 이해해서, 정선된 72권의 책 중에서 지금 내 마음에 가장 와닿는 책을 골라드려요.\n\n오늘 있었던 일이나 기분, 고민을 편하게 들려주세요. 장르를 덧붙여도 좋고, 이전 대화나 이미 소개해 드린 책도 기억합니다.`,
+        text: STATIC_MODE
+          ? `안녕하세요! **마음 서가**에 오신 것을 환영합니다.\n\n들려주신 문장 속 감정 표현을 찾아, 정선된 72권의 책 중에서 지금 내 마음에 와닿을 책을 골라드려요.\n\n오늘 있었던 일이나 기분, 고민을 편하게 들려주세요. 장르를 덧붙여도 좋고, 이미 소개해 드린 책은 다시 추천하지 않아요.`
+          : `안녕하세요! **마음 서가**에 오신 것을 환영합니다.\n\n구글 **Gemini 3.8 Flash** AI가 문장의 숨은 뜻과 일상 맥락을 이해해서, 정선된 72권의 책 중에서 지금 내 마음에 가장 와닿는 책을 골라드려요.\n\n오늘 있었던 일이나 기분, 고민을 편하게 들려주세요. 장르를 덧붙여도 좋고, 이전 대화나 이미 소개해 드린 책도 기억합니다.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
@@ -319,10 +321,13 @@ export default function App() {
               <h1 className="font-display font-bold text-lg text-[var(--ink)] tracking-tight">
                 마음 서가
               </h1>
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--chip)] text-[var(--accent)] border border-[var(--line)]">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Gemini 3.8 Flash
-              </span>
+              {/* AI 모델 표시: AI 없이 동작하는 정적 배포(GitHub Pages)에서는 숨김 */}
+              {!STATIC_MODE && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--chip)] text-[var(--accent)] border border-[var(--line)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Gemini 3.8 Flash
+                </span>
+              )}
             </div>
             <p className="text-xs text-[var(--muted)] truncate">
               지금 감정과 일상을 들려주면 책 3권을 골라드려요
@@ -628,7 +633,7 @@ export default function App() {
                   <span className="w-2 h-2 rounded-full bg-[var(--muted)] typing-dot-3" />
                 </div>
                 <span className="text-xs text-[var(--muted)] font-medium">
-                  Gemini AI가 문장의 감정을 읽고 서가를 찾는 중...
+                  {STATIC_MODE ? '문장의 감정을 읽고 서가를 찾는 중...' : 'Gemini AI가 문장의 감정을 읽고 서가를 찾는 중...'}
                 </span>
               </div>
             </div>
