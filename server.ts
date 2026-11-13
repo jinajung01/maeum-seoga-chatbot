@@ -1,5 +1,4 @@
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -511,6 +510,8 @@ app.post('/api/recommend', async (req, res) => {
 // Setup Vite middleware or static serving
 async function setupServer() {
   if (!isProduction) {
+    // vite는 개발 모드에서만 필요하므로 이때만 불러온다 (배포용 서버 묶음에서 제외)
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -528,4 +529,9 @@ async function setupServer() {
   });
 }
 
-setupServer();
+// Vercel에서는 Vercel이 요청마다 app을 직접 호출하므로 서버를 따로 띄우지 않는다
+if (!process.env.VERCEL) {
+  setupServer();
+}
+
+export default app;
