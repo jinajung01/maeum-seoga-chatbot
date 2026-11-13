@@ -1,0 +1,50 @@
+# main 브랜치에 push하면 AI 스튜디오 버전(React 앱)을 빌드해 Firebase Hosting으로 배포한다.
+# GitHub Pages와 마찬가지로 서버가 없으므로 정적 모드(VITE_STATIC_MODE)로 빌드한다.
+#   - 책 추천: 화면 안의 키워드 기반 추천
+#   - 관리자 설정: Firestore에 저장
+# 필요한 GitHub Secret: FIREBASE_SERVICE_ACCOUNT (배포 전용 서비스 계정 키 JSON)
+name: Firebase Hosting 배포
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firebase-hosting
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 패키지 설치
+        run: npm ci
+
+      - name: 화면 빌드 (정적 모드)
+        env:
+          VITE_STATIC_MODE: 'true'
+        run: npm run build
+
+      - name: 기존 페이지 함께 넣기
+        run: |
+          cp "마음서가-챗봇.html" dist/
+          cp hello.html dist/
+
+      - name: Firebase Hosting에 배포
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: gen-lang-client-0442647897
+          channelId: live
