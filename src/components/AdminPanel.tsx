@@ -34,6 +34,9 @@ import { auth, googleProvider, db } from '../firebase';
 import { AdminAiConfig, PersonaPresetId, RecommendationResult } from '../types';
 import { PERSONA_PRESETS, DEFAULT_AI_CONFIG } from '../data/presets';
 import { BOOKS_CATALOG, EMOTIONS, GENRES, EmotionType } from '../data/books';
+import { STATIC_MODE } from '../lib/staticMode';
+import { loadConfig, saveConfig, describeSaveError } from '../lib/configStore';
+import { ruleBasedRecommend } from '../lib/ruleBasedRecommend';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -131,6 +134,13 @@ export default function AdminPanel({ isOpen, onClose, onConfigChanged }: AdminPa
   const loadServerConfig = async () => {
     setIsLoadingConfig(true);
     try {
+      if (STATIC_MODE) {
+        // 서버가 없으므로 Firestore에서 불러온다
+        const saved = await loadConfig();
+        setConfig(saved);
+        setInitialConfig(saved);
+        return;
+      }
       const res = await fetch('/api/admin/config');
       const json = await res.json();
       if (json.success && json.config) {
@@ -147,6 +157,18 @@ export default function AdminPanel({ isOpen, onClose, onConfigChanged }: AdminPa
   const handleSaveConfig = async () => {
     setIsSaving(true);
     try {
+      if (STATIC_MODE) {
+        try {
+          const saved = await saveConfig(config);
+          setConfig(saved);
+          setInitialConfig(saved);
+          onConfigChanged?.(saved);
+          showToast('설정이 Firebase에 저장되었습니다. 추천 권수는 바로 적용됩니다.');
+        } catch (err) {
+          alert(describeSaveError(err));
+        }
+        return;
+      }
       const res = await fetch('/api/admin/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -173,6 +195,18 @@ export default function AdminPanel({ isOpen, onClose, onConfigChanged }: AdminPa
     if (!window.confirm('모든 AI 설정을 초기 기본값으로 되돌리시겠습니까?')) return;
     setIsSaving(true);
     try {
+      if (STATIC_MODE) {
+        try {
+          const saved = await saveConfig(DEFAULT_AI_CONFIG);
+          setConfig(saved);
+          setInitialConfig(saved);
+          onConfigChanged?.(saved);
+          showToast('기본 권장 설정으로 초기화되었습니다.');
+        } catch (err) {
+          alert(describeSaveError(err));
+        }
+        return;
+      }
       const res = await fetch('/api/admin/config/reset', { method: 'POST' });
       const json = await res.json();
       if (json.success) {
@@ -211,6 +245,21 @@ export default function AdminPanel({ isOpen, onClose, onConfigChanged }: AdminPa
     setTestResult(null);
 
     try {
+      if (STATIC_MODE) {
+        // AI 없이 화면 안의 규칙 기반 추천으로 테스트 (현재 화면의 추천 권수 설정 반영)
+        const started = performance.now();
+        const local = ruleBasedRecommend(testInput, [], config.maxPicks);
+        setTestResult({
+          success: true,
+          isAi: false,
+          latencyMs: Math.max(1, Math.round(performance.now() - started)),
+          data: {
+            ...local,
+            picks: local.picks.map((p) => ({ ...p, book: BOOKS_CATALOG.find((c) => c.id === p.id) })),
+          },
+        });
+        return;
+      }
       const res = await fetch('/api/admin/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -497,6 +546,15 @@ export default function AdminPanel({ isOpen, onClose, onConfigChanged }: AdminPa
 
         {/* Tab Contents */}
         <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+          {STATIC_MODE && (
+            <div className="max-w-3xl mx-auto mb-5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                지금 사이트는 AI 없이 키워드 기반으로 추천합니다. 설정은 Firebase에 저장되며,
+                <b> 추천 권수</b>는 바로 적용되고 나머지 AI 설정(페르소나·프롬프트 등)은 AI 서버를 연결하면 적용됩니다.
+              </span>
+            </div>
+          )}
           {/* TAB 1: Persona & System Instruction */}
           {activeTab === 'persona' && (
             <div className="flex flex-col gap-6 max-w-3xl mx-auto">

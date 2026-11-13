@@ -36,9 +36,9 @@ import {
 } from './data/books';
 import { ChatMessage, RecommendationResult } from './types';
 import { ruleBasedRecommend } from './lib/ruleBasedRecommend';
-
-// 서버 없이 배포한 경우(GitHub Pages) true: AI 대신 화면 안에서 규칙 기반으로 추천하고, 관리자 콘솔은 숨긴다
-const STATIC_MODE = import.meta.env.VITE_STATIC_MODE === 'true';
+import { STATIC_MODE } from './lib/staticMode';
+import { loadConfig } from './lib/configStore';
+import { DEFAULT_AI_CONFIG } from './data/presets';
 
 const PERIODS = [
   { id: 'dawn', label: '새벽', icon: Moon, desc: '차분한 새벽 공기' },
@@ -70,6 +70,14 @@ export default function App() {
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [catalogFilter, setCatalogFilter] = useState<EmotionType | '전체'>('전체');
+
+  // 정적 모드: 관리자가 Firebase에 저장한 추천 권수를 불러와 추천에 반영
+  const [maxPicks, setMaxPicks] = useState<number>(DEFAULT_AI_CONFIG.maxPicks);
+  useEffect(() => {
+    if (STATIC_MODE) {
+      loadConfig().then((c) => setMaxPicks(c.maxPicks));
+    }
+  }, []);
 
   // Track conversation state for API
   const [lastUserText, setLastUserText] = useState('');
@@ -179,7 +187,7 @@ export default function App() {
 
       if (STATIC_MODE) {
         // 서버가 없으므로 화면 안에서 바로 추천
-        const local = ruleBasedRecommend(userText, shownBookIds);
+        const local = ruleBasedRecommend(userText, shownBookIds, maxPicks);
         json = {
           success: true,
           data: {
@@ -364,17 +372,15 @@ export default function App() {
               <Library className="w-4 h-4 text-[var(--muted)]" />
             </button>
 
-            {/* Admin fine-tuning modal (서버가 없는 정적 배포에서는 숨김) */}
-            {!STATIC_MODE && (
-              <button
-                type="button"
-                onClick={() => setIsAdminOpen(true)}
-                className="p-1.5 rounded-full bg-[var(--chip)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors cursor-pointer"
-                title="서가 AI 기능 세밀 조정 (관리자 콘솔)"
-              >
-                <Sliders className="w-4 h-4 text-[var(--muted)]" />
-              </button>
-            )}
+            {/* Admin fine-tuning modal */}
+            <button
+              type="button"
+              onClick={() => setIsAdminOpen(true)}
+              className="p-1.5 rounded-full bg-[var(--chip)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+              title="서가 AI 기능 세밀 조정 (관리자 콘솔)"
+            >
+              <Sliders className="w-4 h-4 text-[var(--muted)]" />
+            </button>
 
             {/* Reset conversation */}
             <button
@@ -868,7 +874,11 @@ export default function App() {
       )}
 
       {/* Admin Fine-tuning Console Modal */}
-      <AdminPanel isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
+      <AdminPanel
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+        onConfigChanged={(c) => setMaxPicks(c.maxPicks)}
+      />
     </div>
   );
 }
